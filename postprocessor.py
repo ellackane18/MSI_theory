@@ -48,7 +48,7 @@ class PAPR_MESS:
         self.input_name = model.input_name
         self.Punit = model.Punit # Pressure unit
 
-    def fit_Cheb_rates(self, n_P, n_T, P_min=0.01, P_max=100, T_min=200, T_max=3000, target_dir=None):
+    def fit_Cheb_rates(self, n_P, n_T, P_min=0.01, P_max=100, T_min=200, T_max=3000, target_dir=None, same_line_result=False):
         """Fit the rate constants into Chebyshev polynomials."""
         # Execute the nominal and perturbed PAPR-MESS files
         # self.Run()
@@ -159,13 +159,16 @@ class PAPR_MESS:
                 fhand.write('=' * 30 + '\n')
                 fhand.write(spc + '\n')
                 for key in rate[spc].keys():
-                     k = rate[spc][key]
-                     fhand.write(key + '\n')
-                     coef = self.cheby_poly(n_T, n_P, k, self.T_ls, self.P_ls, P_min, P_max, T_min, T_max).reshape((n_P, n_T))
-                     coef_dict[spc][key] = coef
-                     fhand.write('T_min:%s K    T_max:%s K    P_min:%s %s    P_max:%s %s\n'%(T_min, T_max, P_min, Punit, P_max, Punit))
-                     for P in range(n_P):
-                        fhand.write(str(coef[P,:].tolist()) + '\n')
+                    k = rate[spc][key]
+                    fhand.write(key + '\n')
+                    coef = self.cheby_poly(n_T, n_P, k, self.T_ls, self.P_ls, P_min, P_max, T_min, T_max).reshape((n_P, n_T))
+                    coef_dict[spc][key] = coef
+                    fhand.write('T_min:%s K    T_max:%s K    P_min:%s %s    P_max:%s %s\n'%(T_min, T_max, P_min, Punit, P_max, Punit))
+                    if same_line_result:
+                        fhand.write(str(coef.reshape((1,-1)).tolist()) + '\n')
+                    else:
+                        for P in range(n_P):
+                           fhand.write(str(coef[P,:].tolist()) + '\n')
             fhand.close()
             # store the fitted coefficients for Chebyshev polynomials
             if wd == self.nwd:
@@ -220,7 +223,7 @@ class PAPR_MESS:
         coef = np.linalg.lstsq(cheb_mat, np.log10(np.array(k)))[0]
         return coef
 
-    def Cheb_sens_coeff(self):
+    def Cheb_sens_coeff(self, same_line_result=False):
         """Calculate the sensitivity coefficients for the Chebyshev rate constants."""
         # initialization
         self.Cheb_sens = {}
@@ -250,7 +253,12 @@ class PAPR_MESS:
                 Cheb_sens[chan] = sens
                 # write into output file
                 fhand.write(str(chan) + '\n')
-                fhand.write(str(sens) + '\n')
+                if same_line_result:
+                    fhand.write(str(sens.reshape((1,-1)).tolist()) + '\n')
+                else:
+                    sens = sens.reshape(self.n_P, self.n_T)
+                    for P in range(self.n_P):
+                        fhand.write(str(sens[P,:].tolist()) + '\n')
             self.Cheb_sens[key] = Cheb_sens
         fhand.close()
         os.chdir(self.mwd)
