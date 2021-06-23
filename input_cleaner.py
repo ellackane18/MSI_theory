@@ -15,7 +15,7 @@ def file_cleaner(file_name, simplifid = False):
     fhand.close()
     cleaned_file = 'cleaned_input.txt'
     cleaned_input = io.open(cleaned_file, 'wb')
-    spec_list = ["Geometry[angstrom]", "ElectronicLevels[1/cm]", "FourierExpansion[1/cm]", "FragmentGeometry[angstrom]"]
+    spec_list = ["Geometry[angstrom]", "ElectronicLevels[1/cm]", "FourierExpansion[1/cm]", "FragmentGeometry[angstrom]", "FourierExpansion[kcal/mol]"]
     skip_start = -1
     skip_end = -1
     comment_symbol = ['!', '#']

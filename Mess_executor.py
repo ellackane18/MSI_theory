@@ -317,7 +317,7 @@ class Mess_Executor:
             Pres_ls = pertb_dict[key][1]
             perturb_diff = pertb_dict[key][2]
             active_dir = dwd + '/' + X
-            os.system('cp %s/MESS_rate_extractor.py %s' %(self.mwd,active_dir))
+            os.system('cp %s/MESS_rate_extractor.py %s' %(self.mwd, active_dir))
             os.chdir(active_dir)
             if os.path.exists('rate_bash.sh'):
                 Rate_bash = io.open('rate_bash.sh', 'ab')
@@ -342,4 +342,5 @@ class Mess_Executor:
         for x in R_P_list:
             reactant, product = x.split('->')
             self.get_channel_rate_constants(reactant, product, pert_nom)
+
 

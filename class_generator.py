@@ -11,7 +11,7 @@ import Mess_class, os, copy, io
 
 # read in cleaned file and generate output classes
 # class_generator() is for regular MESS-input and class_generator_abstraction() is for abstraction reactions
-def class_generator(cleaned_file, keep_file = False):
+def class_generator(cleaned_file, keep_file = True):
     # define output classes
     results = {}
     save_flag = False
