@@ -11,6 +11,7 @@ import Mess_executor as ME
 import os, io, sys
 import numpy as np
 from scipy.optimize import curve_fit
+import pandas as pd
 
 class PAPR_MESS:
 
@@ -56,6 +57,10 @@ class PAPR_MESS:
         self.n_T = n_T      # number of temperature degree
         self.Cheb_coef = {}
         self.pert_ls = {}
+        self.P_min = P_min
+        self.P_max = P_max
+        self.T_min = T_min
+        self.T_max = T_max
 
         # for debugging: fit rate constants in a give trail directory
         if target_dir != None:
@@ -223,9 +228,14 @@ class PAPR_MESS:
         coef = np.linalg.lstsq(cheb_mat, np.log10(np.array(k)))[0]
         return coef
 
-    def Cheb_sens_coeff(self, same_line_result=False):
+    def Cheb_sens_coeff(self, same_line_result=False, aggregated_sens=True, debug=False):
         """Calculate the sensitivity coefficients for the Chebyshev rate constants."""
         # initialization
+        if aggregated_sens:
+            self.aggregated_sens = pd.DataFrame()
+            if not debug:
+                self.aggregated_sens['Pressure (%s)' %self.Punit] = np.repeat(self.P_ls, len(self.T_ls))
+            self.aggregated_sens['Temperature (K)'] = np.tile(self.T_ls, len(self.P_ls))
         self.Cheb_sens = {}
         # decide sensitivity coefficients for each perturbation
         for key in self.pert_dict.keys():
@@ -248,8 +258,12 @@ class PAPR_MESS:
                 rate_diff = self.Cheb_coef['perturbed'][key][chan] - self.Cheb_coef['nominal'][nom_key][chan]
                 if 'Energy' in key:
                     sens = rate_diff / (self.pert_ls['perturbed'][key] - self.pert_ls['nominal'][nom_key])
+                    if aggregated_sens:
+                        self.aggregated_sens['%s_%s'%(key,chan)] = self.calculate_sensitivity(sens).reshape((1,-1))[0] * 349.758 * np.log(10)
                 else:
                     sens = rate_diff / np.log((1. + self.pert_ls['perturbed'][key]) / (1. + self.pert_ls['nominal'][nom_key]))
+                    if aggregated_sens:
+                        self.aggregated_sens['%s_%s'%(key,chan)] = self.calculate_sensitivity(sens).reshape((1,-1))[0] * np.log(10)
                 Cheb_sens[chan] = sens
                 # write into output file
                 fhand.write(str(chan) + '\n')
@@ -261,8 +275,11 @@ class PAPR_MESS:
                         fhand.write(str(sens[P,:].tolist()) + '\n')
             self.Cheb_sens[key] = Cheb_sens
         fhand.close()
-        os.chdir(self.mwd)
-        print("Calculating channel-specific sensitivity coefficients for Chebyshev polynomials for system %s ..." %self.input_name.split('.')[0])
+        # write aggregated sensitivity into file
+        self.aggregated_sens.to_csv("Aggregated_sens.csv", index=False)
+        if not debug:
+            os.chdir(self.mwd)
+            print("Calculating channel-specific sensitivity coefficients for Chebyshev polynomials for system %s ..." %self.input_name.split('.')[0])
 
     def fit_Arr_perturbed_rates(self, target_dir=None):
         """Fit rate constants into Arrhenius formula."""
@@ -387,3 +404,19 @@ class PAPR_MESS:
         fhand.close()
         os.chdir(self.mwd)
         print("Calculating channel-specific sensitivity coefficients for Arrhenius fittings for system %s ..." %self.input_name.split('.')[0])
+
+
+    def calculate_sensitivity(self, sens_coef):
+        '''Calculate the aggregated sensiticity as a function of temperature and pressure.'''
+        cheb_mat = np.zeros((len(self.P_ls) * len(self.T_ls), self.n_T * self.n_P))
+        for n, P in enumerate(self.P_ls):       # !! assume that at each presssure, we have the same temperateure range
+            for m, T in enumerate(self.T_ls):
+                for i in range(self.n_T):
+                    T_tilde = self.reduced_T(T, self.T_min, self.T_max)
+                    T_cheb = self.first_cheby_poly(T_tilde, i)
+                    for j in range(self.n_P):
+                        P_tilde = self.reduced_P(P, self.P_min, self.P_max)
+                        P_cheb = self.first_cheby_poly(P_tilde, j)
+                        cheb_mat[n*len(self.T_ls)+m, i*self.n_P+j] = P_cheb * T_cheb
+        sens = np.dot(cheb_mat, sens_coef.reshape((-1,1)))
+        return sens
