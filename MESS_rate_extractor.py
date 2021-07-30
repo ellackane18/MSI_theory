@@ -18,8 +18,8 @@ def T_rate_extractor(file_name, P, reactant, product):
     fhand = io.open(file_name, 'rb')
     lines = fhand.readlines()
     fhand.close()
-    startline = 1e10
-    endline = 1e10
+    startline = sys.maxsize
+    endline = sys.maxsize
     T_section = False
     section = False
     channel_flag = False
@@ -35,8 +35,9 @@ def T_rate_extractor(file_name, P, reactant, product):
         if T_section and P_header in line:
             temp_line = line.strip().split()
             if float(temp_line[-2]) == P and temp_line[-1] == unit:
-                section = True
-                T_section = False
+                if channel in lines[num + 2]:
+                    section = True
+                    T_section = False
                 continue
         if section and channel in line:
             channel_line = [i for i in line.split(' ') if len(i) != 0]
@@ -66,8 +67,8 @@ def T_rate_abstraction(file_name, reactant, product):
     fhand = io.open(file_name, 'rb')
     lines = fhand.readlines()
     fhand.close()
-    startline = 1e10
-    endline = 1e10
+    startline = sys.maxsize
+    endline = sys.maxsize
     channel_flag = False
     T_header = 'Temperature-Species Rate Tables:'
     # locate the rate coefficients lines
