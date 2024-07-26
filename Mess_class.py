@@ -23,7 +23,7 @@ class Mess_Input:
     def hasunit(self, attr):
         """True if unit is associated to the command."""
         value = self.__dict__[attr]
-        unit_pool = ['[1/cm]', '[kcal/mol]', '[K]', '[torr]', '[angstrom]', '[amu]', '[au]', '[atm]']
+        unit_pool = ['[1/cm]', '[kcal/mol]', '[K]', '[torr]', '[angstrom]', '[amu]', '[au]', '[atm]', '[km/mol]']
         if type(value) is list:
             if value[-1] in unit_pool:
                 return True
