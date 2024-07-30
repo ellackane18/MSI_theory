@@ -43,7 +43,7 @@ def file_cleaner(file_name, simplifid = False):
                     skip_start = num + 1
                     skip_end = num + int(value[0]) + 1
                     temp_list = []
-                    for x in xrange(skip_start, skip_end):
+                    for x in range(skip_start, skip_end):
                         temp = lines[x].replace('\t', ' ').replace('\n', '').replace('\r', '')
                         temp = temp.strip(' ')
                         temp_list.append(temp)
@@ -68,7 +68,7 @@ def file_cleaner(file_name, simplifid = False):
                     skip_start = num
                     skip_end = num + 2
                     temp_list = []
-                    for x in xrange(skip_start, skip_end):
+                    for x in range(skip_start, skip_end):
                         temp = lines[x].split(']')[-1]
                         temp = temp.strip()
                         temp_list.append(temp)
